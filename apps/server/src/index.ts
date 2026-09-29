@@ -65,6 +65,27 @@ fastify.get("/", async () => {
   return "OK";
 });
 
+
+fastify.get("/weather/:long/:lat", async (request, reply) => {
+  const { long, lat } = request.params as { long: string; lat: string };
+  try {
+    const response = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${long}&hourly=temperature_2m&forecast_days=1&current_weather=true`
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to fetch weather data: ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    fastify.log.error({ err: error }, "Weather API Error:");
+    reply.status(500).send({
+      error: "Internal weather API error",
+      code: "WEATHER_API_FAILURE",
+    });
+  }
+});
+
 fastify.listen({ port: 3000, host: "0.0.0.0" }, (err) => {
   if (err) {
     fastify.log.error(err);
