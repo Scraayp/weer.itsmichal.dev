@@ -23,9 +23,11 @@ import {
   LocateFixed,
   MapPin,
   RefreshCw,
+  Shirt,
   Sun,
   Sunrise,
   Sunset,
+  ThermometerSun,
   Umbrella,
   Wind,
   type LucideIcon,
@@ -41,6 +43,15 @@ type WeatherCondition = {
   label: string;
   detail: string;
   icon: LucideIcon;
+};
+
+type ClothingAdvice = {
+  title: string;
+  description: string;
+  items: Array<{
+    label: string;
+    icon: LucideIcon;
+  }>;
 };
 
 const dayFormatter = new Intl.DateTimeFormat("nl-NL", { weekday: "short" });
@@ -84,6 +95,75 @@ function getWeatherCondition(code: number, isDay = true): WeatherCondition {
     return { label: "Onweer", detail: "Kans op onweer en stevige buien.", icon: CloudLightning };
   }
   return { label: "Wisselvallig", detail: "Het weer kan snel veranderen.", icon: CloudSun };
+}
+
+function getClothingAdvice({
+  apparentTemperature,
+  maximumTemperature,
+  minimumTemperature,
+  rainChance,
+  windSpeed,
+  uvIndex,
+}: {
+  apparentTemperature: number;
+  maximumTemperature: number;
+  minimumTemperature: number;
+  rainChance: number;
+  windSpeed: number;
+  uvIndex: number;
+}): ClothingAdvice {
+  let title: string;
+  let description: string;
+  let mainItem: string;
+  let mainIcon: LucideIcon = Shirt;
+
+  if (apparentTemperature <= 0) {
+    title = "Trek je winterjas aan";
+    description = "Het voelt vrieskoud. Kies voor warme lagen en bedek je handen en nek.";
+    mainItem = "Winterjas, trui en lange broek";
+    mainIcon = CloudSnow;
+  } else if (apparentTemperature <= 8) {
+    title = "Ga voor een warme jas";
+    description = "Het is te fris voor alleen een trui, zeker als je langer buiten bent.";
+    mainItem = "Warme jas en lange broek";
+  } else if (apparentTemperature <= 14) {
+    title = "Neem een jas mee";
+    description = "Een jas of stevige trui houdt je comfortabel zonder te warm te worden.";
+    mainItem = "Jas of dikke trui";
+  } else if (apparentTemperature <= 18) {
+    title = "Een lichte jas is slim";
+    description = "Aangenaam, maar nog net fris genoeg voor een dunne buitenlaag.";
+    mainItem = "Lichte jas of vest";
+  } else if (apparentTemperature <= 24) {
+    title = "T-shirtweer";
+    description = "Een T-shirt is genoeg. Neem alleen een dun vest mee als je laat thuiskomt.";
+    mainItem = "T-shirt en lichte broek";
+  } else {
+    title = "Shorts en T-shirt zijn genoeg";
+    description = "Het voelt warm buiten. Kies luchtige kleding en blijf goed drinken.";
+    mainItem = "Shorts en T-shirt";
+    mainIcon = Sun;
+  }
+
+  const items: ClothingAdvice["items"] = [{ label: mainItem, icon: mainIcon }];
+
+  if (rainChance >= 40) {
+    items.push({ label: "Paraplu of regenjas", icon: Umbrella });
+  }
+
+  if (windSpeed >= 30) {
+    items.push({ label: "Winddichte buitenlaag", icon: Wind });
+  }
+
+  if (uvIndex >= 5) {
+    items.push({ label: "Zonnebrand en zonnebril", icon: Sun });
+  }
+
+  if (maximumTemperature - minimumTemperature >= 8 && items.length < 4) {
+    items.push({ label: "Extra laag voor later", icon: ThermometerSun });
+  }
+
+  return { title, description, items };
 }
 
 function getCurrentLocation() {
@@ -131,6 +211,7 @@ function WeatherLoading() {
             ))}
           </div>
         </div>
+        <Skeleton className="h-36 w-full" />
         <Skeleton className="h-64 w-full" />
       </div>
     </main>
@@ -233,6 +314,14 @@ function HomeComponent() {
   );
   const hourlyForecast = hourly.time.slice(currentHourIndex, currentHourIndex + 8);
   const today = new Date(`${daily.time[0]}T12:00:00`);
+  const clothingAdvice = getClothingAdvice({
+    apparentTemperature: current.apparent_temperature,
+    maximumTemperature: daily.temperature_2m_max[0],
+    minimumTemperature: daily.temperature_2m_min[0],
+    rainChance: daily.precipitation_probability_max[0],
+    windSpeed: current.wind_speed_10m,
+    uvIndex: daily.uv_index_max[0],
+  });
 
   return (
     <main className="weather-shell flex-1 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
@@ -322,6 +411,35 @@ function HomeComponent() {
             />
           </div>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Wat trek je aan?</CardTitle>
+            <CardDescription>{clothingAdvice.title}</CardDescription>
+            <CardAction>
+              <div className="grid size-10 place-items-center rounded-full bg-secondary">
+                <Shirt className="size-4" aria-hidden="true" />
+              </div>
+            </CardAction>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <p className="max-w-2xl text-sm text-muted-foreground">{clothingAdvice.description}</p>
+            <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {clothingAdvice.items.map(({ label, icon: AdviceIcon }) => (
+                <li
+                  key={label}
+                  className="flex items-center gap-3 rounded-xl border bg-muted/40 px-3 py-2.5 text-xs font-medium"
+                >
+                  <AdviceIcon
+                    className="size-4 shrink-0 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                  {label}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
