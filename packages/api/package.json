@@ -1,0 +1,22 @@
+{
+  "name": "@weer.itsmichal.dev/api",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@trpc/client": "^11.18.0",
+    "@trpc/server": "^11.18.0",
+    "@weer.itsmichal.dev/auth": "*",
+    "@weer.itsmichal.dev/db": "*",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@weer.itsmichal.dev/config": "*",
+    "typescript": "^6.0.3"
+  }
+}

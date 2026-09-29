@@ -1,0 +1,27 @@
+{
+  "name": "@weer.itsmichal.dev/db",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "db:push": "drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:deploy": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "drizzle-orm": "1.0.0-rc.4",
+    "mysql2": "^3.24.3",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@weer.itsmichal.dev/config": "*",
+    "drizzle-kit": "1.0.0-rc.4",
+    "typescript": "^6.0.3",
+    "varlock": "1.18.0"
+  }
+}

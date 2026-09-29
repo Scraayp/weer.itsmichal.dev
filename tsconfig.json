@@ -1,0 +1,3 @@
+{
+  "extends": "@weer.itsmichal.dev/config/tsconfig.base.json"
+}
