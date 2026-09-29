@@ -20,11 +20,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
     meta: [
       {
-        title: "weer.itsmichal.dev",
+        title: "Weer — lokaal weerbericht",
       },
       {
         name: "description",
-        content: "weer.itsmichal.dev is a web application",
+        content: "Bekijk het actuele weer en de zevendaagse verwachting voor jouw locatie.",
       },
     ],
     links: [
@@ -46,7 +46,7 @@ function RootComponent() {
         disableTransitionOnChange
         storageKey="vite-ui-theme"
       >
-        <div className="grid grid-rows-[auto_1fr] h-svh">
+        <div className="flex min-h-svh flex-col">
           <Header />
           <Outlet />
         </div>
