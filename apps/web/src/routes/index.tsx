@@ -7,45 +7,59 @@ export const Route = createFileRoute("/")({
   component: HomeComponent,
 });
 
-const TITLE_TEXT = `
- ██████╗ ███████╗████████╗████████╗███████╗██████╗
- ██╔══██╗██╔════╝╚══██╔══╝╚══██╔══╝██╔════╝██╔══██╗
- ██████╔╝█████╗     ██║      ██║   █████╗  ██████╔╝
- ██╔══██╗██╔══╝     ██║      ██║   ██╔══╝  ██╔══██╗
- ██████╔╝███████╗   ██║      ██║   ███████╗██║  ██║
- ╚═════╝ ╚══════╝   ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝
 
- ████████╗    ███████╗████████╗ █████╗  ██████╗██╗  ██╗
- ╚══██╔══╝    ██╔════╝╚══██╔══╝██╔══██╗██╔════╝██║ ██╔╝
-    ██║       ███████╗   ██║   ███████║██║     █████╔╝
-    ██║       ╚════██║   ██║   ██╔══██║██║     ██╔═██╗
-    ██║       ███████║   ██║   ██║  ██║╚██████╗██║  ██╗
-    ╚═╝       ╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
- `;
+function getCurrentLocation() {
+  return new Promise<{ lat: string; long: string }>((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("Geolocation is not supported by this browser."));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        resolve({
+          lat: coords.latitude.toString(),
+          long: coords.longitude.toString(),
+        });
+      },
+      (error) => reject(new Error(error.message)),
+      {
+        enableHighAccuracy: false,
+        timeout: 10_000,
+        maximumAge: 5 * 60_000,
+      }
+    );
+  });
+}
 
 function HomeComponent() {
-  const healthCheck = useQuery(trpc.healthCheck.queryOptions());
+  const location = useQuery({
+    queryKey: ["current-location"],
+    queryFn: getCurrentLocation,
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  const weather = useQuery(
+    trpc.weather.getWeather.queryOptions(
+      location.data ?? { lat: "", long: "" },
+      {
+        enabled: Boolean(location.data),
+      }
+    )
+  );
+
+  if (location.isLoading || weather.isLoading) {
+    return <div>Loading weather data...</div>;
+  }
+
+  if (location.isError || weather.isError) {
+    return <div>Error loading weather data: {weather.error?.message || location.error?.message}</div>;
+  }
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-2">
-      <pre className="overflow-x-auto font-mono text-sm">{TITLE_TEXT}</pre>
-      <div className="grid gap-6">
-        <section className="rounded-lg border p-4">
-          <h2 className="mb-2 font-medium">API Status</h2>
-          <div className="flex items-center gap-2">
-            <div
-              className={`h-2 w-2 rounded-full ${healthCheck.data ? "bg-green-500" : "bg-red-500"}`}
-            />
-            <span className="text-sm text-muted-foreground">
-              {healthCheck.isLoading
-                ? "Checking..."
-                : healthCheck.data
-                  ? "Connected"
-                  : "Disconnected"}
-            </span>
-          </div>
-        </section>
-      </div>
+      <pre>{JSON.stringify(weather.data, null, 2)}</pre>
     </div>
   );
 }
