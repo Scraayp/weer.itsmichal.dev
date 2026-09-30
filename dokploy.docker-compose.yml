@@ -1,0 +1,50 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      secrets:
+        - web_env
+        - server_env
+      args:
+        VITE_SERVER_URL: ${VITE_SERVER_URL}
+    ports:
+      - "5468:80"
+    # Keep the existing depends_on, healthcheck, and restart settings.
+
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+      secrets:
+        - web_env
+        - server_env
+    ports:
+      - "5469:3000"
+    environment:
+      NODE_ENV: production
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      DATABASE_URL: ${DATABASE_URL}
+    # Keep the existing depends_on, healthcheck, and restart settings.
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: weer.itsmichal.dev
+      MYSQL_USER: user
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - weer.itsmichal.dev_mysql_data:/var/lib/mysql
+    # Keep the existing healthcheck and restart settings.
+
+volumes:
+  weer.itsmichal.dev_mysql_data:
+
+secrets:
+  web_env:
+    environment: WEB_ENV
+  server_env:
+    environment: SERVER_ENV
