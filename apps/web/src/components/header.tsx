@@ -2,12 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { CloudSun } from "lucide-react";
 
 import { ModeToggle } from "./mode-toggle";
-import UserMenu from "./user-menu";
 
 export default function Header() {
   const links = [
     { to: "/", label: "Weer" },
-    { to: "/dashboard", label: "Overzicht" },
   ] as const;
 
   return (
