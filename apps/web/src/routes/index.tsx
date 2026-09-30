@@ -1,175 +1,60 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import type { inferRouterOutputs } from "@trpc/server";
+import type { AppRouter } from "@weer.itsmichal.dev/api/routers/index";
 import { Button } from "@weer.itsmichal.dev/ui/components/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@weer.itsmichal.dev/ui/components/card";
-import { Skeleton } from "@weer.itsmichal.dev/ui/components/skeleton";
-import {
-  Cloud,
-  CloudDrizzle,
-  CloudFog,
-  CloudLightning,
-  CloudRain,
-  CloudSnow,
-  CloudSun,
-  Compass,
-  Droplets,
-  LocateFixed,
-  MapPin,
-  RefreshCw,
-  Shirt,
-  Sun,
-  Sunrise,
-  Sunset,
-  ThermometerSun,
-  Umbrella,
-  Wind,
-  type LucideIcon,
-} from "lucide-react";
+import { LocateFixed, MapPin, RefreshCw } from "lucide-react";
+import { useEffect } from "react";
 
+import { DailyForecast, type DayPoint } from "@/components/weather/daily-forecast";
+import {
+  HourlyForecast,
+  type HourPoint,
+  type SunEvent,
+} from "@/components/weather/hourly-forecast";
+import { OutfitFigure } from "@/components/weather/outfit-figure";
+import { SkyEffects } from "@/components/weather/sky";
+import {
+  GARMENTS,
+  formatHour,
+  formatTemperature,
+  getOutfit,
+  getOutfitHeadline,
+  getSkyKey,
+  getWeatherCondition,
+  isSnowCode,
+  isWetCode,
+  keyGarment,
+  listGarments,
+  temperatureWidth,
+  type Outfit,
+} from "@/lib/weather";
 import { trpc } from "@/utils/trpc";
 
 export const Route = createFileRoute("/")({
   component: HomeComponent,
 });
 
-type WeatherCondition = {
-  label: string;
-  detail: string;
-  icon: LucideIcon;
-};
-
-type ClothingAdvice = {
-  title: string;
-  description: string;
-  items: Array<{
-    label: string;
-    icon: LucideIcon;
-  }>;
-};
-
-const dayFormatter = new Intl.DateTimeFormat("nl-NL", { weekday: "short" });
 const fullDateFormatter = new Intl.DateTimeFormat("nl-NL", {
   weekday: "long",
   day: "numeric",
   month: "long",
 });
 
-function getWeatherCondition(code: number, isDay = true): WeatherCondition {
-  if (code === 0) {
-    return {
-      label: isDay ? "Zonnig" : "Helder",
-      detail: "Een heldere lucht zonder bewolking.",
-      icon: Sun,
-    };
-  }
-  if (code <= 2) {
-    return {
-      label: "Licht bewolkt",
-      detail: "Zon en wolken wisselen elkaar af.",
-      icon: CloudSun,
-    };
-  }
-  if (code === 3) {
-    return { label: "Bewolkt", detail: "Een overwegend grijze lucht.", icon: Cloud };
-  }
-  if (code === 45 || code === 48) {
-    return { label: "Mistig", detail: "Beperkt zicht door mist.", icon: CloudFog };
-  }
-  if ([51, 53, 55, 56, 57].includes(code)) {
-    return { label: "Motregen", detail: "Af en toe wat lichte regen.", icon: CloudDrizzle };
-  }
-  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) {
-    return { label: "Regen", detail: "Neem voor de zekerheid een paraplu mee.", icon: CloudRain };
-  }
-  if ([71, 73, 75, 77, 85, 86].includes(code)) {
-    return { label: "Sneeuw", detail: "Winterse neerslag in de buurt.", icon: CloudSnow };
-  }
-  if (code >= 95) {
-    return { label: "Onweer", detail: "Kans op onweer en stevige buien.", icon: CloudLightning };
-  }
-  return { label: "Wisselvallig", detail: "Het weer kan snel veranderen.", icon: CloudSun };
-}
-
-function getClothingAdvice({
-  apparentTemperature,
-  maximumTemperature,
-  minimumTemperature,
-  rainChance,
-  windSpeed,
-  uvIndex,
-}: {
-  apparentTemperature: number;
-  maximumTemperature: number;
-  minimumTemperature: number;
-  rainChance: number;
-  windSpeed: number;
-  uvIndex: number;
-}): ClothingAdvice {
-  let title: string;
-  let description: string;
-  let mainItem: string;
-  let mainIcon: LucideIcon = Shirt;
-
-  if (apparentTemperature <= 0) {
-    title = "Trek je winterjas aan";
-    description = "Het voelt vrieskoud. Kies voor warme lagen en bedek je handen en nek.";
-    mainItem = "Winterjas, trui en lange broek";
-    mainIcon = CloudSnow;
-  } else if (apparentTemperature <= 8) {
-    title = "Ga voor een warme jas";
-    description = "Het is te fris voor alleen een trui, zeker als je langer buiten bent.";
-    mainItem = "Warme jas en lange broek";
-  } else if (apparentTemperature <= 14) {
-    title = "Neem een jas mee";
-    description = "Een jas of stevige trui houdt je comfortabel zonder te warm te worden.";
-    mainItem = "Jas of dikke trui";
-  } else if (apparentTemperature <= 18) {
-    title = "Een lichte jas is slim";
-    description = "Aangenaam, maar nog net fris genoeg voor een dunne buitenlaag.";
-    mainItem = "Lichte jas of vest";
-  } else if (apparentTemperature <= 24) {
-    title = "T-shirtweer";
-    description = "Een T-shirt is genoeg. Neem alleen een dun vest mee als je laat thuiskomt.";
-    mainItem = "T-shirt en lichte broek";
-  } else {
-    title = "Shorts en T-shirt zijn genoeg";
-    description = "Het voelt warm buiten. Kies luchtige kleding en blijf goed drinken.";
-    mainItem = "Shorts en T-shirt";
-    mainIcon = Sun;
-  }
-
-  const items: ClothingAdvice["items"] = [{ label: mainItem, icon: mainIcon }];
-
-  if (rainChance >= 40) {
-    items.push({ label: "Paraplu of regenjas", icon: Umbrella });
-  }
-
-  if (windSpeed >= 30) {
-    items.push({ label: "Winddichte buitenlaag", icon: Wind });
-  }
-
-  if (uvIndex >= 5) {
-    items.push({ label: "Zonnebrand en zonnebril", icon: Sun });
-  }
-
-  if (maximumTemperature - minimumTemperature >= 8 && items.length < 4) {
-    items.push({ label: "Extra laag voor later", icon: ThermometerSun });
-  }
-
-  return { title, description, items };
-}
+const PLACEHOLDER_OUTFIT: Outfit = getOutfit({
+  feelsLike: 15,
+  rainChance: 0,
+  rainingNow: false,
+  snowing: false,
+  windSpeed: 0,
+  uvIndex: 0,
+  sunny: false,
+});
 
 function getCurrentLocation() {
   return new Promise<{ lat: string; long: string }>((resolve, reject) => {
     if (!navigator.geolocation) {
-      reject(new Error("Geolocatie wordt niet ondersteund door deze browser."));
+      reject(new Error("Deze browser kan je locatie niet bepalen."));
       return;
     }
 
@@ -190,84 +75,65 @@ function getCurrentLocation() {
   });
 }
 
-function formatTemperature(value: number) {
-  return `${Math.round(value)}°`;
-}
-
-function formatHour(value: string) {
-  return value.slice(11, 16);
+/** Tints the page (and the header) with the current sky. */
+function useSky(key: string) {
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.sky = key;
+    return () => {
+      delete root.dataset.sky;
+    };
+  }, [key]);
 }
 
 function WeatherLoading() {
+  useSky("loading");
   return (
-    <main className="weather-shell flex-1 px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <Skeleton className="h-5 w-44" />
-        <div className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
-          <Skeleton className="h-96 w-full" />
-          <div className="grid grid-cols-2 gap-3">
-            {Array.from({ length: 4 }, (_, index) => (
-              <Skeleton key={index} className="h-44 w-full" />
-            ))}
+    <main className="-mt-16 flex-1">
+      <section className="hero" aria-busy="true" aria-label="Weer wordt geladen">
+        <div className="hero-inner">
+          <div className="hero-meta">
+            <span className="sky-placeholder h-4 w-40" />
+          </div>
+          <div className="hero-now flex flex-col gap-4">
+            <span className="sky-placeholder h-28 w-40" />
+            <span className="sky-placeholder h-4 w-32" />
+          </div>
+          <div className="hero-wear flex flex-col gap-3">
+            <span className="sky-placeholder h-6 w-56" />
+            <span className="sky-placeholder h-4 w-36" />
+          </div>
+          <div className="hero-figure">
+            <OutfitFigure outfit={PLACEHOLDER_OUTFIT} className="figure-placeholder" />
           </div>
         </div>
-        <Skeleton className="h-36 w-full" />
-        <Skeleton className="h-64 w-full" />
-      </div>
+      </section>
     </main>
   );
 }
 
 function WeatherError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  useSky("overcast-day");
   return (
-    <main className="weather-shell grid flex-1 place-items-center px-4 py-12">
-      <Card className="w-full max-w-lg">
-        <CardHeader>
-          <div className="mb-3 grid size-11 place-items-center rounded-full bg-secondary">
-            <LocateFixed className="size-5" aria-hidden="true" />
-          </div>
-          <CardTitle>We kunnen je lokale weer nog niet tonen</CardTitle>
-          <CardDescription>
-            Sta locatietoegang toe in je browser en probeer het opnieuw. Je exacte locatie wordt
-            niet opgeslagen.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <p className="text-xs text-muted-foreground">{message}</p>
-          <Button onClick={onRetry} className="self-start">
+    <main className="-mt-16 flex-1">
+      <section className="hero">
+        <div className="mx-auto flex h-full max-w-xl flex-col justify-center gap-5 px-4 pt-16">
+          <LocateFixed className="size-8" strokeWidth={1.5} aria-hidden="true" />
+          <h1 className="font-display text-3xl leading-tight font-bold sm:text-4xl">
+            Je locatie is nodig voor het weer
+          </h1>
+          <p className="text-base text-(--sky-ink-soft)">
+            Sta locatietoegang toe in je browser en probeer het opnieuw. Je locatie wordt niet
+            opgeslagen.
+          </p>
+          <p className="text-sm text-(--sky-ink-soft)">Melding: {message}</p>
+          <Button onClick={onRetry} size="lg" className="self-start rounded-full px-4">
             <RefreshCw data-icon="inline-start" />
             Opnieuw proberen
           </Button>
-        </CardContent>
-      </Card>
-    </main>
-  );
-}
-
-function MetricCard({
-  icon: Icon,
-  label,
-  value,
-  description,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  description: string;
-}) {
-  return (
-    <Card size="sm">
-      <CardHeader>
-        <div className="mb-5 flex items-center justify-between">
-          <span className="text-[0.68rem] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-            {label}
-          </span>
-          <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
         </div>
-        <CardTitle className="text-2xl tracking-tight">{value}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-    </Card>
+      </section>
+    </main>
   );
 }
 
@@ -305,232 +171,208 @@ function HomeComponent() {
     );
   }
 
-  const { current, daily, hourly, latitude, longitude } = weather.data;
-  const condition = getWeatherCondition(current.weather_code, current.is_day === 1);
-  const CurrentIcon = condition.icon;
+  return <WeatherView data={weather.data} />;
+}
+
+type WeatherData = inferRouterOutputs<AppRouter>["weather"]["getWeather"];
+
+function WeatherView({ data }: { data: WeatherData }) {
+  const { current, daily, hourly } = data;
+  const isDay = current.is_day === 1;
+  const condition = getWeatherCondition(current.weather_code, isDay);
+  useSky(getSkyKey(condition.kind, isDay));
+
   const currentHourIndex = Math.max(
     0,
     hourly.time.findIndex((time) => time >= current.time.slice(0, 13)),
   );
-  const hourlyForecast = hourly.time.slice(currentHourIndex, currentHourIndex + 8);
-  const today = new Date(`${daily.time[0]}T12:00:00`);
-  const clothingAdvice = getClothingAdvice({
-    apparentTemperature: current.apparent_temperature,
-    maximumTemperature: daily.temperature_2m_max[0],
-    minimumTemperature: daily.temperature_2m_min[0],
-    rainChance: daily.precipitation_probability_max[0],
+  const hours: HourPoint[] = hourly.time
+    .slice(currentHourIndex, currentHourIndex + 24)
+    .map((time, offset) => {
+      const index = currentHourIndex + offset;
+      return {
+        time,
+        temperature: hourly.temperature_2m[index],
+        rainChance: hourly.precipitation_probability[index],
+        code: hourly.weather_code[index],
+        isDay: hourly.is_day[index] === 1,
+      };
+    });
+
+  // The outfit covers the next twelve hours, not just this moment.
+  const nextHours = hours.slice(0, 12);
+  const rainingNow = isWetCode(current.weather_code) || current.precipitation > 0;
+  const snowing = isSnowCode(current.weather_code);
+  const rainChance = Math.max(...nextHours.map((hour) => hour.rainChance));
+  const outfit = getOutfit({
+    feelsLike: current.apparent_temperature,
+    rainChance,
+    rainingNow,
+    snowing,
     windSpeed: current.wind_speed_10m,
     uvIndex: daily.uv_index_max[0],
+    sunny: condition.kind === "clear" || condition.kind === "partly",
+  });
+  const garments = listGarments(outfit);
+  const headline = getOutfitHeadline(outfit, current.apparent_temperature, snowing);
+  const detail = getOutlook(nextHours, current.temperature_2m, rainingNow, daily.uv_index_max[0]);
+
+  const windowEnd = hours[hours.length - 1].time;
+  const sunEvents: SunEvent[] = [
+    ...daily.sunrise.map((time) => ({ time, kind: "rise" as const })),
+    ...daily.sunset.map((time) => ({ time, kind: "set" as const })),
+  ].filter(({ time }) => time > hours[0].time && time < windowEnd);
+
+  const days: DayPoint[] = daily.time.map((date, index) => {
+    const code = daily.weather_code[index];
+    const dayOutfit = getOutfit({
+      feelsLike: daily.apparent_temperature_max[index],
+      rainChance: daily.precipitation_probability_max[index],
+      rainingNow: false,
+      snowing: isSnowCode(code),
+      windSpeed: 0,
+      uvIndex: daily.uv_index_max[index],
+      sunny: code <= 2,
+    });
+    return {
+      date,
+      code,
+      max: daily.temperature_2m_max[index],
+      min: daily.temperature_2m_min[index],
+      rainChance: daily.precipitation_probability_max[index],
+      garment: keyGarment(dayOutfit),
+    };
   });
 
+  const today = fullDateFormatter.format(new Date(`${daily.time[0]}T12:00:00`));
+  const outfitKey = `${outfit.top}-${outfit.outer}-${outfit.bottom}-${garments.length}`;
+
   return (
-    <main className="weather-shell flex-1 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+    <main className="-mt-16 flex-1">
+      <section className="hero" aria-labelledby="outfit-headline">
+        <SkyEffects kind={condition.kind} isDay={isDay} />
+
+        <div className="hero-inner">
+          <div className="hero-meta">
+            <span className="first-letter:uppercase">{today}</span>
+            <span className="flex items-center gap-1.5">
               <MapPin className="size-3.5" aria-hidden="true" />
-              <span>Jouw locatie</span>
-              <span aria-hidden="true">·</span>
-              <span>
-                {latitude.toFixed(2)}°, {longitude.toFixed(2)}°
+              Jouw locatie, {formatHour(current.time)}
+            </span>
+          </div>
+
+          <div className="hero-now">
+            <p
+              className="temperature font-display"
+              style={{ fontStretch: `${temperatureWidth(current.apparent_temperature)}%` }}
+            >
+              {Math.round(current.temperature_2m)}°
+            </p>
+            <p className="mt-3 text-base font-medium sm:text-lg">
+              {condition.label}
+              <span className="text-(--sky-ink-soft)">
+                , voelt als {formatTemperature(current.apparent_temperature)}
               </span>
+            </p>
+          </div>
+
+          <div className="hero-wear">
+            <h1
+              id="outfit-headline"
+              className="font-display text-xl leading-[1.15] font-bold text-balance sm:text-3xl"
+            >
+              {headline}
+            </h1>
+            {detail && <p className="mt-2 text-sm text-(--sky-ink-soft) sm:text-base">{detail}</p>}
+          </div>
+
+          <ul key={outfitKey} className="garment-list" aria-label="Wat je aantrekt">
+            {garments.map((garment, index) => (
+              <li
+                key={garment}
+                style={{ "--c": GARMENTS[garment].color, "--i": index } as React.CSSProperties}
+              >
+                <span className="swatch" aria-hidden="true" />
+                {GARMENTS[garment].label}
+              </li>
+            ))}
+          </ul>
+
+          <div className="hero-figure">
+            <OutfitFigure key={outfitKey} outfit={outfit} className="figure" />
+          </div>
+
+          <dl className="hero-stats">
+            <div>
+              <dt>Max / min</dt>
+              <dd>
+                {formatTemperature(daily.temperature_2m_max[0])} /{" "}
+                {formatTemperature(daily.temperature_2m_min[0])}
+              </dd>
             </div>
-            <p className="text-sm first-letter:uppercase">{fullDateFormatter.format(today)}</p>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="status-dot" aria-hidden="true" />
-            Bijgewerkt om {formatHour(current.time)}
-          </div>
+            <div>
+              <dt>Wind</dt>
+              <dd>{Math.round(current.wind_speed_10m)} km/u</dd>
+            </div>
+            <div>
+              <dt>Regenkans</dt>
+              <dd>{rainChance}%</dd>
+            </div>
+            <div>
+              <dt>UV-index</dt>
+              <dd>{Math.round(daily.uv_index_max[0])}</dd>
+            </div>
+          </dl>
         </div>
+      </section>
 
-        <div className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
-          <Card className="weather-hero min-h-96 justify-between">
-            <CardHeader className="relative">
-              <div className="mb-10 flex items-start justify-between gap-4">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[0.68rem] font-semibold tracking-[0.18em] text-primary-foreground/70 uppercase">
-                    Nu buiten
-                  </span>
-                  <CardTitle className="text-xl text-primary-foreground">
-                    {condition.label}
-                  </CardTitle>
-                </div>
-                <CurrentIcon
-                  className="size-14 text-primary-foreground"
-                  strokeWidth={1.25}
-                  aria-hidden="true"
-                />
-              </div>
-              <div className="flex items-end gap-5">
-                <p className="text-8xl leading-none font-semibold tracking-[-0.08em] text-primary-foreground sm:text-9xl">
-                  {Math.round(current.temperature_2m)}
-                  <span className="align-top text-4xl">°</span>
-                </p>
-                <div className="mb-2 flex flex-col gap-1 text-primary-foreground/75">
-                  <span>Voelt als {formatTemperature(current.apparent_temperature)}</span>
-                  <span>
-                    H {formatTemperature(daily.temperature_2m_max[0])} · L{" "}
-                    {formatTemperature(daily.temperature_2m_min[0])}
-                  </span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="relative flex items-center justify-between gap-4 border-t border-primary-foreground/15 pt-4 text-primary-foreground/75">
-              <p>{condition.detail}</p>
-              <Compass className="size-4 shrink-0" aria-hidden="true" />
-            </CardContent>
-          </Card>
+      <div className="sheet">
+        <div
+          className="mx-auto h-1 w-10 translate-y-2.5 rounded-full bg-foreground/15"
+          aria-hidden="true"
+        />
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-14 px-4 pt-7 pb-12 sm:px-8">
+          <section
+            id="uren"
+            className="hourly-section flex flex-col gap-5"
+            aria-labelledby="uren-titel"
+          >
+            <h2 id="uren-titel" className="font-display text-2xl font-bold">
+              Komende 24 uur
+            </h2>
+            <HourlyForecast hours={hours} sunEvents={sunEvents} />
+          </section>
 
-          <div className="grid grid-cols-2 gap-3">
-            <MetricCard
-              icon={Wind}
-              label="Wind"
-              value={`${Math.round(current.wind_speed_10m)} km/u`}
-              description="Actuele windsnelheid"
-            />
-            <MetricCard
-              icon={Droplets}
-              label="Vochtigheid"
-              value={`${current.relative_humidity_2m}%`}
-              description="Relatieve luchtvochtigheid"
-            />
-            <MetricCard
-              icon={Umbrella}
-              label="Neerslag"
-              value={`${daily.precipitation_probability_max[0]}%`}
-              description="Hoogste kans vandaag"
-            />
-            <MetricCard
-              icon={Sun}
-              label="UV-index"
-              value={daily.uv_index_max[0].toFixed(1)}
-              description={
-                daily.uv_index_max[0] >= 6 ? "Bescherming aanbevolen" : "Lage tot matige kracht"
-              }
-            />
-          </div>
+          <section id="week" className="flex flex-col gap-3" aria-labelledby="week-titel">
+            <h2 id="week-titel" className="font-display text-2xl font-bold">
+              Deze week
+            </h2>
+            <DailyForecast days={days} currentTemperature={current.temperature_2m} />
+          </section>
+
+          <p className="text-center text-xs text-muted-foreground">
+            Weergegevens van Open-Meteo. Je locatie wordt niet opgeslagen.
+          </p>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Wat trek je aan?</CardTitle>
-            <CardDescription>{clothingAdvice.title}</CardDescription>
-            <CardAction>
-              <div className="grid size-10 place-items-center rounded-full bg-secondary">
-                <Shirt className="size-4" aria-hidden="true" />
-              </div>
-            </CardAction>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <p className="max-w-2xl text-sm text-muted-foreground">{clothingAdvice.description}</p>
-            <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              {clothingAdvice.items.map(({ label, icon: AdviceIcon }) => (
-                <li
-                  key={label}
-                  className="flex items-center gap-3 rounded-xl border bg-muted/40 px-3 py-2.5 text-xs font-medium"
-                >
-                  <AdviceIcon
-                    className="size-4 shrink-0 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  {label}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>De komende uren</CardTitle>
-            <CardDescription>Temperatuur en neerslagkans op jouw locatie</CardDescription>
-            <CardAction className="hidden items-center gap-5 text-xs text-muted-foreground sm:flex">
-              <span className="flex items-center gap-1.5">
-                <Sunrise className="size-3.5" aria-hidden="true" />
-                {formatHour(daily.sunrise[0])}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Sunset className="size-3.5" aria-hidden="true" />
-                {formatHour(daily.sunset[0])}
-              </span>
-            </CardAction>
-          </CardHeader>
-          <CardContent className="overflow-x-auto pb-1">
-            <div className="grid min-w-175 grid-cols-8 divide-x divide-border">
-              {hourlyForecast.map((time, offset) => {
-                const index = currentHourIndex + offset;
-                const hourlyCondition = getWeatherCondition(hourly.weather_code[index]);
-                const HourIcon = hourlyCondition.icon;
-
-                return (
-                  <div key={time} className="flex flex-col items-center gap-3 px-3 py-3">
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {offset === 0 ? "Nu" : formatHour(time)}
-                    </span>
-                    <HourIcon
-                      className="size-5"
-                      strokeWidth={1.5}
-                      aria-label={hourlyCondition.label}
-                    />
-                    <strong className="text-lg font-medium">
-                      {formatTemperature(hourly.temperature_2m[index])}
-                    </strong>
-                    <span className="flex items-center gap-1 text-[0.7rem] text-muted-foreground">
-                      <Droplets className="size-3" aria-hidden="true" />
-                      {hourly.precipitation_probability[index]}%
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>7-daagse verwachting</CardTitle>
-            <CardDescription>Een snelle blik op de rest van de week</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col divide-y divide-border">
-              {daily.time.map((date, index) => {
-                const dailyCondition = getWeatherCondition(daily.weather_code[index]);
-                const DayIcon = dailyCondition.icon;
-
-                return (
-                  <div
-                    key={date}
-                    className="grid grid-cols-[1fr_auto_auto] items-center gap-5 py-3.5 sm:grid-cols-[1fr_1fr_auto_auto]"
-                  >
-                    <span className="font-medium capitalize">
-                      {index === 0 ? "Vandaag" : dayFormatter.format(new Date(`${date}T12:00:00`))}
-                    </span>
-                    <span className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
-                      <DayIcon className="size-4" aria-hidden="true" />
-                      {dailyCondition.label}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Droplets className="size-3" aria-hidden="true" />
-                      {daily.precipitation_probability_max[index]}%
-                    </span>
-                    <span className="min-w-20 text-right font-medium tabular-nums">
-                      {formatTemperature(daily.temperature_2m_max[index])}
-                      <span className="ml-2 text-muted-foreground">
-                        {formatTemperature(daily.temperature_2m_min[index])}
-                      </span>
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        <p className="pb-4 text-center text-[0.68rem] tracking-wide text-muted-foreground uppercase">
-          Weergegevens van Open-Meteo · Locatie blijft op je apparaat
-        </p>
       </div>
     </main>
   );
+}
+
+/** One short line about what changes over the next hours. */
+function getOutlook(hours: HourPoint[], temperature: number, rainingNow: boolean, uvIndex: number) {
+  if (rainingNow) {
+    const dry = hours.find((hour) => hour.rainChance < 30);
+    return dry
+      ? `Rond ${formatHour(dry.time)} wordt het droger.`
+      : "Het blijft de komende uren nat.";
+  }
+  const rain = hours.find((hour) => hour.rainChance >= 50);
+  if (rain) return `Regen verwacht rond ${formatHour(rain.time)}.`;
+  const coldest = Math.min(...hours.map((hour) => hour.temperature));
+  if (temperature - coldest >= 5) {
+    return `Later koelt het af naar ${formatTemperature(coldest)}. Neem een extra laag mee.`;
+  }
+  if (uvIndex >= 6) return `UV-index ${Math.round(uvIndex)} vandaag. Smeer je in.`;
+  return null;
 }

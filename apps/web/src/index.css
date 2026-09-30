@@ -1,1 +1,607 @@
 @import "@weer.itsmichal.dev/ui/globals.css";
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ------------------------------------------------------------------------ */
+/* Sky palettes. The home route sets data-sky on <html> from the forecast.  */
+/* ------------------------------------------------------------------------ */
+
+:root[data-sky] {
+  --sky-top: var(--sky-a);
+  --sky-bottom: var(--sky-b);
+  --sky-ink: var(--sky-ink-light);
+  --sky-ink-soft: color-mix(in oklab, var(--sky-ink) 72%, transparent);
+  --sky-line: color-mix(in oklab, var(--sky-ink) 18%, transparent);
+}
+
+:root[data-sky="loading"] {
+  --sky-a: #a9b6c2;
+  --sky-b: #dce3e9;
+  --sky-ink-light: #1c2a38;
+}
+:root[data-sky="clear-day"] {
+  --sky-a: #4c9be0;
+  --sky-b: #cfeaf7;
+  --sky-ink-light: #0d2744;
+}
+:root[data-sky="partly-day"] {
+  --sky-a: #6fa6d6;
+  --sky-b: #d8e8f1;
+  --sky-ink-light: #11283f;
+}
+:root[data-sky="overcast-day"] {
+  --sky-a: #95a5b4;
+  --sky-b: #dce2e7;
+  --sky-ink-light: #1b2936;
+}
+:root[data-sky="wet-day"] {
+  --sky-a: #7a8ea1;
+  --sky-b: #c3ced7;
+  --sky-ink-light: #0f1b27;
+}
+:root[data-sky="snow-day"] {
+  --sky-a: #b9cadc;
+  --sky-b: #f0f4f8;
+  --sky-ink-light: #1b2b3d;
+}
+:root[data-sky="storm"] {
+  --sky-a: #3d4760;
+  --sky-b: #737d93;
+  --sky-ink-light: #f1f4fa;
+}
+:root[data-sky="clear-night"] {
+  --sky-a: #0c1431;
+  --sky-b: #2b3868;
+  --sky-ink-light: #eef1ff;
+}
+:root[data-sky="overcast-night"] {
+  --sky-a: #161d2c;
+  --sky-b: #36435a;
+  --sky-ink-light: #e7ecf4;
+}
+
+/* The dark theme keeps the sky's hue but turns the lights down. */
+:root.dark[data-sky] {
+  --sky-top: color-mix(in oklab, var(--sky-a) 50%, #07101f);
+  --sky-bottom: color-mix(in oklab, var(--sky-b) 34%, #0b1528);
+  --sky-ink: #eef3f9;
+}
+
+:root[data-sky] body {
+  background: var(--sky-bottom);
+}
+
+:root[data-sky] .site-header {
+  border-color: transparent;
+  background: color-mix(in oklab, var(--sky-top) 70%, transparent);
+  color: var(--sky-ink);
+}
+
+:root[data-sky] .site-header nav a {
+  color: var(--sky-ink-soft);
+}
+
+:root[data-sky] .site-header nav a:hover,
+:root[data-sky] .site-header nav a[data-status="active"] {
+  background: color-mix(in oklab, var(--sky-ink) 10%, transparent);
+  color: var(--sky-ink);
+}
+
+:root[data-sky] .site-header :is([data-slot="button"], [data-slot="dropdown-menu-trigger"]) {
+  border-color: var(--sky-line);
+  background: color-mix(in oklab, var(--sky-ink) 6%, transparent);
+  color: var(--sky-ink);
+}
+
+/* ------------------------------------------------------------------------ */
+/* Hero                                                                     */
+/* ------------------------------------------------------------------------ */
+
+.hero {
+  position: sticky;
+  top: 0;
+  height: calc(100svh - 5rem);
+  overflow: hidden;
+  background: linear-gradient(to bottom, var(--sky-top), var(--sky-bottom));
+  color: var(--sky-ink);
+}
+
+/* Too short to pin the sky behind the forecast: let the hero scroll away normally. */
+@media (max-height: 600px) {
+  .hero {
+    position: relative;
+    height: auto;
+  }
+
+  .hero-inner {
+    min-height: max(32rem, calc(100svh - 5rem));
+  }
+
+  .hero .hero-figure {
+    min-height: 16rem;
+  }
+}
+
+.hero-inner {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "meta meta"
+    "now figure"
+    "wear figure"
+    "list list"
+    "stats stats";
+  column-gap: 0.75rem;
+  width: 100%;
+  max-width: 72rem;
+  height: 100%;
+  margin-inline: auto;
+  padding: 5rem 1rem 1.25rem;
+  transform-origin: 50% 20%;
+}
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+  grid-area: meta;
+  margin-bottom: 1.5rem;
+  color: var(--sky-ink-soft);
+  font-size: 0.875rem;
+}
+
+.hero-now {
+  grid-area: now;
+}
+
+.hero-wear {
+  grid-area: wear;
+  margin-top: 1.75rem;
+}
+
+.hero-wear h1 {
+  font-stretch: 92%;
+}
+
+.hero-figure {
+  display: flex;
+  grid-area: figure;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 0;
+}
+
+.figure,
+.figure-placeholder {
+  width: auto;
+  max-width: 47vw;
+  height: 100%;
+}
+
+.figure-placeholder {
+  opacity: 0.16;
+  filter: brightness(0);
+}
+
+.figure-placeholder .garment {
+  animation: none;
+}
+
+.temperature {
+  font-size: min(11rem, 22vw, 22svh);
+  font-weight: 800;
+  line-height: 0.8;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  margin-left: -0.05em;
+  transition: font-stretch 0.6s ease;
+}
+
+.garment-list {
+  display: flex;
+  flex-flow: row wrap;
+  grid-area: list;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+
+.garment-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.7rem 0.3rem 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--sky-ink) 8%, transparent);
+  font-size: 0.875rem;
+  font-weight: 500;
+  animation: dress-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i) * 110ms + 200ms);
+}
+
+.swatch {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 999px;
+  background: var(--c);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.14);
+}
+
+.hero-stats {
+  display: flex;
+  grid-area: stats;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--sky-line);
+}
+
+.hero-stats dt {
+  color: var(--sky-ink-soft);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.hero-stats dd {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sky-placeholder {
+  display: block;
+  border-radius: 0.5rem;
+  background: color-mix(in oklab, var(--sky-ink) 12%, transparent);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@media (min-width: 640px) {
+  .hero-inner {
+    column-gap: 2rem;
+    padding-inline: 2rem;
+    padding-bottom: 1.75rem;
+  }
+
+  .hero-meta {
+    font-size: 0.925rem;
+  }
+
+  .garment-list {
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+  }
+
+  .garment-list li {
+    gap: 0.55rem;
+    padding: 0.4rem 0.85rem 0.4rem 0.5rem;
+    font-size: 0.925rem;
+  }
+
+  .hero-stats {
+    justify-content: flex-start;
+    gap: 2.5rem;
+  }
+
+  .figure,
+  .figure-placeholder {
+    max-width: 36vw;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-inner {
+    grid-template-columns: minmax(0, 34rem) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+    grid-template-areas:
+      "meta meta"
+      "now figure"
+      "wear figure"
+      "list figure"
+      "stats figure";
+  }
+
+  .hero-now {
+    align-self: end;
+  }
+
+  .hero-stats {
+    margin-top: 2.5rem;
+  }
+
+  .figure,
+  .figure-placeholder {
+    max-width: none;
+  }
+}
+
+/* The figure gets dressed layer by layer on load. */
+.garment {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: dress-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i) * 110ms + 150ms);
+}
+
+@keyframes dress-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* ------------------------------------------------------------------------ */
+/* Sky effects                                                              */
+/* ------------------------------------------------------------------------ */
+
+.sky-effects {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sky-sun {
+  position: absolute;
+  top: 6%;
+  right: 6%;
+  width: min(18rem, 55vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    #fff7da 0 24%,
+    rgb(255 240 190 / 0.55) 25%,
+    rgb(255 236 180 / 0) 70%
+  );
+}
+
+:root.dark .sky-sun {
+  opacity: 0.75;
+  filter: saturate(2.2) hue-rotate(-8deg);
+}
+
+.sky-moon {
+  position: absolute;
+  top: 12%;
+  right: 12%;
+  width: 4rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: inset -13px 7px 0 0 #f2eedc;
+  filter: drop-shadow(0 0 24px rgb(242 238 220 / 0.3));
+}
+
+.sky-star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #fff;
+  animation: twinkle 6s ease-in-out infinite;
+}
+
+.sky-cloud {
+  position: absolute;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--sky-bottom) 55%, white);
+  opacity: 0.55;
+  filter: blur(22px);
+  animation: drift 70s ease-in-out infinite alternate;
+}
+
+:root.dark .sky-cloud {
+  background: color-mix(in oklab, var(--sky-bottom) 80%, white);
+  opacity: 0.35;
+}
+
+.sky-cloud-a {
+  top: 10%;
+  left: -12%;
+  width: 60%;
+  height: 16%;
+}
+
+.sky-cloud-b {
+  top: 28%;
+  right: -18%;
+  width: 55%;
+  height: 12%;
+  animation-duration: 90s;
+  animation-direction: alternate-reverse;
+}
+
+.sky-cloud-c {
+  top: 2%;
+  left: 32%;
+  width: 70%;
+  height: 14%;
+  animation-duration: 110s;
+}
+
+.sky-fog {
+  position: absolute;
+  inset: 30% -10% 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0) 0 28px,
+    rgb(255 255 255 / 0.28) 28px 56px
+  );
+  filter: blur(14px);
+  animation: drift 45s ease-in-out infinite alternate;
+}
+
+.sky-drop {
+  position: absolute;
+  top: -12%;
+  width: 1.5px;
+  height: 22px;
+  border-radius: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in oklab, var(--sky-ink) 25%, white)
+  );
+  animation: fall 1s linear infinite;
+}
+
+.sky-flake {
+  position: absolute;
+  top: -4%;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.85;
+  animation: snowfall 9s linear infinite;
+}
+
+@keyframes fall {
+  from {
+    transform: translate3d(0, 0, 0) rotate(12deg);
+  }
+  to {
+    transform: translate3d(-12vh, 120vh, 0) rotate(12deg);
+  }
+}
+
+@keyframes snowfall {
+  to {
+    transform: translate3d(4vw, 110vh, 0);
+  }
+}
+
+@keyframes drift {
+  to {
+    transform: translateX(10%);
+  }
+}
+
+@keyframes twinkle {
+  50% {
+    opacity: 0.15;
+  }
+}
+
+/* ------------------------------------------------------------------------ */
+/* The sheet that slides over the sky                                       */
+/* ------------------------------------------------------------------------ */
+
+.sheet {
+  position: relative;
+  z-index: 10;
+  border-radius: 1.75rem 1.75rem 0 0;
+  background: var(--background);
+  box-shadow: 0 -30px 60px -30px rgb(0 0 0 / 0.35);
+}
+
+.hourly-section {
+  view-timeline: --hourly block;
+}
+
+.hourly-scroller {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 1rem;
+  scrollbar-width: thin;
+  mask-image: linear-gradient(to right, #000 calc(100% - 3rem), transparent);
+}
+
+.hourly-col {
+  scroll-snap-align: start;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Scroll-driven motion (runs off the main thread where supported)          */
+/* ------------------------------------------------------------------------ */
+
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-inner {
+      animation: hero-recede linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 85svh;
+    }
+
+    .sky-effects {
+      animation: sky-dim linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 85svh;
+    }
+
+    .temp-line {
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: draw-line linear both;
+      animation-timeline: --hourly;
+      animation-range: entry 15% cover 40%;
+    }
+
+    .temp-area {
+      animation: fade-in linear both;
+      animation-timeline: --hourly;
+      animation-range: entry 25% cover 45%;
+    }
+
+    .range-fill {
+      transform-origin: center;
+      animation: grow-range linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 35%;
+    }
+  }
+}
+
+@keyframes hero-recede {
+  to {
+    opacity: 0.15;
+    transform: translateY(-3%) scale(0.94);
+  }
+}
+
+@keyframes sky-dim {
+  to {
+    opacity: 0.4;
+  }
+}
+
+@keyframes draw-line {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes grow-range {
+  from {
+    transform: scaleX(0.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .garment,
+  .garment-list li,
+  .sky-cloud,
+  .sky-fog,
+  .sky-star,
+  .sky-placeholder {
+    animation: none;
+  }
+
+  .sky-drop,
+  .sky-flake {
+    display: none;
+  }
+}

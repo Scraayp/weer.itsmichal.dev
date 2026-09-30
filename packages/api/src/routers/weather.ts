@@ -23,12 +23,14 @@ const weatherResponseSchema = z.object({
     temperature_2m: z.array(z.number()),
     precipitation_probability: z.array(z.number()),
     weather_code: z.array(z.number()),
+    is_day: z.array(z.number()),
   }),
   daily: z.object({
     time: z.array(z.string()),
     weather_code: z.array(z.number()),
     temperature_2m_max: z.array(z.number()),
     temperature_2m_min: z.array(z.number()),
+    apparent_temperature_max: z.array(z.number()),
     sunrise: z.array(z.string()),
     sunset: z.array(z.string()),
     uv_index_max: z.array(z.number()),
@@ -50,9 +52,9 @@ export const weatherRouter = router({
         longitude: input.long,
         current:
           "temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m",
-        hourly: "temperature_2m,precipitation_probability,weather_code",
+        hourly: "temperature_2m,precipitation_probability,weather_code,is_day",
         daily:
-          "weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max",
+          "weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,sunrise,sunset,uv_index_max,precipitation_probability_max",
         forecast_days: "7",
         timezone: "auto",
       });
