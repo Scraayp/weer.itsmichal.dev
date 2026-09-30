@@ -6,6 +6,9 @@ import SignUpForm from "@/components/sign-up-form";
 
 export const Route = createFileRoute("/login")({
   component: RouteComponent,
+  head: () => ({
+    meta: [{ title: "Inloggen — weer." }, { name: "robots", content: "noindex, nofollow" }],
+  }),
 });
 
 function RouteComponent() {

@@ -2,18 +2,126 @@
 <html lang="nl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!--
+      This is a client-rendered SPA: link unfurlers (Discord, X, WhatsApp, Slack, iMessage…)
+      don't run JavaScript, so everything they need has to live in this static file.
+    -->
+    <title>Weer en wat je aantrekt — weer.itsmichal.dev</title>
+    <meta
+      name="description"
+      content="Het actuele weer op jouw locatie, de verwachting voor 24 uur en 7 dagen, en direct kledingadvies: jas, regenjas, paraplu of korte broek."
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="author" content="Michal" />
+    <meta name="application-name" content="weer." />
+    <link rel="canonical" href="https://weer.itsmichal.dev/" />
+
+    <!-- Open Graph (Discord, Facebook, LinkedIn, WhatsApp, Slack, Telegram) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="weer." />
+    <meta property="og:locale" content="nl_NL" />
+    <meta property="og:url" content="https://weer.itsmichal.dev/" />
+    <meta property="og:title" content="Wat trek je vandaag aan?" />
+    <meta
+      property="og:description"
+      content="Het weer op jouw locatie, met kledingadvies voor de komende uren en een verwachting voor de hele week."
+    />
+    <meta property="og:image" content="https://weer.itsmichal.dev/og-image.png" />
+    <meta property="og:image:secure_url" content="https://weer.itsmichal.dev/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Een man in een wollen jas met paraplu naast de vraag: Wat trek je vandaag aan?"
+    />
+
+    <!-- X / Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Wat trek je vandaag aan?" />
+    <meta
+      name="twitter:description"
+      content="Het weer op jouw locatie, met kledingadvies voor de komende uren en een verwachting voor de hele week."
+    />
+    <meta name="twitter:image" content="https://weer.itsmichal.dev/og-image.png" />
+    <meta
+      name="twitter:image:alt"
+      content="Een man in een wollen jas met paraplu naast de vraag: Wat trek je vandaag aan?"
+    />
+
+    <!-- Browser chrome, icons, install -->
+    <meta name="theme-color" content="#4c9be0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c1431" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="apple-mobile-web-app-title" content="weer." />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://weer.itsmichal.dev/#website",
+            "url": "https://weer.itsmichal.dev/",
+            "name": "weer.",
+            "alternateName": "weer.itsmichal.dev",
+            "description": "Het actuele weer op jouw locatie met kledingadvies.",
+            "inLanguage": "nl-NL",
+            "publisher": { "@id": "https://itsmichal.dev/#person" }
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://weer.itsmichal.dev/#app",
+            "url": "https://weer.itsmichal.dev/",
+            "name": "weer.",
+            "description": "Het actuele weer op jouw locatie, de verwachting voor 24 uur en 7 dagen, en direct kledingadvies.",
+            "applicationCategory": "UtilitiesApplication",
+            "operatingSystem": "Any",
+            "browserRequirements": "Requires JavaScript and location access.",
+            "inLanguage": "nl-NL",
+            "isAccessibleForFree": true,
+            "image": "https://weer.itsmichal.dev/og-image.png",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+            "author": { "@id": "https://itsmichal.dev/#person" }
+          },
+          {
+            "@type": "Person",
+            "@id": "https://itsmichal.dev/#person",
+            "name": "Michal",
+            "url": "https://itsmichal.dev/"
+          }
+        ]
+      }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,400..900&family=Onest:wght@400..700&display=swap"
     />
-    <title>weer.itsmichal.dev</title>
   </head>
 
   <body>
     <div id="app"></div>
+    <noscript>
+      <main style="max-width: 36rem; margin: 4rem auto; padding: 0 1rem; font-family: sans-serif">
+        <h1>Wat trek je vandaag aan?</h1>
+        <p>
+          weer. toont het actuele weer op jouw locatie, de verwachting voor de komende 24 uur en de
+          hele week, en vertelt je direct wat je aan moet: jas, regenjas, paraplu of korte broek.
+        </p>
+        <p>Schakel JavaScript in om het weer te bekijken.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

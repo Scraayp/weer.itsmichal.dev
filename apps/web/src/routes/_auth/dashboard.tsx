@@ -5,6 +5,9 @@ import { trpc } from "@/utils/trpc";
 
 export const Route = createFileRoute("/_auth/dashboard")({
   component: RouteComponent,
+  head: () => ({
+    meta: [{ title: "Dashboard — weer." }, { name: "robots", content: "noindex, nofollow" }],
+  }),
 });
 
 function RouteComponent() {

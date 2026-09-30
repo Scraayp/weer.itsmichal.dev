@@ -15,35 +15,10 @@ export interface RouterAppContext {
   queryClient: QueryClient;
 }
 
+// The site-wide title, description, share previews and icons live in index.html, because
+// crawlers and link unfurlers never run this code. Routes only add overrides via `head`.
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
-  head: () => ({
-    meta: [
-      {
-        title: "Weer — lokaal weerbericht",
-      },
-      {
-        name: "description",
-        content: "Bekijk het actuele weer en de zevendaagse verwachting voor jouw locatie.",
-      },
-    ],
-    links: [
-      {
-        rel: "icon",
-        href: "/favicon.ico",
-        sizes: "32x32",
-      },
-      {
-        rel: "icon",
-        href: "/favicon.svg",
-        type: "image/svg+xml",
-      },
-      {
-        rel: "apple-touch-icon",
-        href: "/apple-touch-icon.png",
-      },
-    ],
-  }),
 });
 
 function RootComponent() {
