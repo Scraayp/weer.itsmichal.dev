@@ -6,6 +6,8 @@ export default defineConfig({
   outDir: "./dist",
   clean: true,
   deps: {
+    // Rolldown breaks its CommonJS initialization when the output runs in Bun.
+    neverBundle: true,
     alwaysBundle: [/@weer.itsmichal.dev\/.*/],
   },
 });
