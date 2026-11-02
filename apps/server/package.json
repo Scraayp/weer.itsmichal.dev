@@ -19,7 +19,7 @@
     "@weer.itsmichal.dev/auth": "*",
     "@weer.itsmichal.dev/db": "*",
     "better-auth": "1.7.5",
-    "fastify": "^5.12.3",
+    "fastify": "^5.12.6",
     "varlock": "1.18.0",
     "zod": "^4.5.4"
   },
